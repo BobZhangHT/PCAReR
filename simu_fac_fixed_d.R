@@ -17,9 +17,9 @@ library(abind)
 # parameters --------------------------------------------------------------
 
 # experiment
-reps = 2000#2000
-cores = 60#50
-save_nm = '06-07Simu'
+reps = 2000
+cores = 60 # number of cores to use
+save_nm = '06-07Simu' # name of the saving folder
 
 # factors
 # known factors

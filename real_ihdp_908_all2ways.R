@@ -37,10 +37,8 @@ ihdp = imp1
 
 colnames(ihdp) = c('y','treatment',
                    paste('x',1:(ncol(ihdp)-2),sep=''))
-# standardize the continuos covariates
-#ihdp[,paste('x',1:6,sep='')] = scale(ihdp[,paste('x',1:6,sep='')])
 
-# standardize all comvariates
+# standardize all covariates
 ihdp[,1:27] = scale(ihdp[,1:27])
 
 # Simulation --------------------------------------------------------------
@@ -70,14 +68,14 @@ ihdp_y_gen = function(X,w){
   yhat
 }
 
-# We balance all samples
+# we balance all samples
 n = nrow(ihdp)
 X = as.matrix(model.matrix(fml,data=ihdp))[1:n,]
 X = scale(X)
 
 save_nm = '0608-ihdp-all2ways'
 
-# Determine K
+# determine K
 X_svd = svd(X)
 scree_df = data.frame(
   index = 1:dim(X)[2],
@@ -94,7 +92,7 @@ scree_plt = ggplot(scree_df,aes(x=index,y=var_explained, group=1))+
   geom_vline(aes(xintercept=sum(X_svd$d^2>mean(X_svd$d^2)),
                 linetype='solid'),
              color='darkred',
-             show.legend = T,#'Kaiser',
+             show.legend = T,
              key_glyph = "path",
              lwd=0.5)+
   geom_vline(aes(xintercept=sum(cumsum_vars<0.5)+1,
@@ -109,7 +107,6 @@ scree_plt = ggplot(scree_df,aes(x=index,y=var_explained, group=1))+
                                                                          "darkred"))),
                       labels = unname(TeX(c('$\\gamma_k=0.5$',
                                                'Kaiser')))) +
-  #scale_linetype_discrete(values=c('solid','dashed'))+
   theme_bw()+
   theme(legend.position="top")
 
@@ -247,7 +244,6 @@ if(!file.exists(save_dir_pcarer)){
     best_w = w
     best_mdist = mdist
     while (mdist>a_pca) {
-      #w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
       w = sample(rep(c(0,1),c(n0,n1)),n,F) 
       mdist = maha_dist(Zk,w)
       if(best_mdist>mdist){
@@ -308,7 +304,6 @@ if(!file.exists(save_dir_ridgerer)){
     best_w = w
     best_mdist = mdist
     while (mdist>a) {
-      #w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
       w = sample(rep(c(0,1),c(n0,n1)),n,F) 
       mdist = maha_dist(X,w,lambda)
       if(best_mdist>mdist){
@@ -338,7 +333,6 @@ if(!file.exists(save_dir_ridgerer)){
   load(file = save_dir_ridgerer)
 }
 
-# save.image('./save/ihdp_workspace.rdata')
 
 # Covariate Analysis ------------------------------------------------------
 library(lattice)
@@ -401,9 +395,6 @@ plt_mdiff = levelplot(r_mdiff_mat_plt[1:25,c(3,2,1)],
                    xlab=list('Covariate Index',cex=.75),
                    ylab='',
                    aspect = 0.3,
-                   #xlab=TeX('$X$'),ylab='',#TeX('$d$'),
-                   #at=seq(0,0.5,.1),
-                   #main=TeX("$r_{\}$"))
                    par.settings=nmlist,
                    main='')
 
@@ -453,8 +444,6 @@ denplt<-ggplot(tau_df, aes(x=value,
              linetype="dashed")+
   xlab(TeX('$\\hat{\\tau}$'))+
   ylab('Density') + 
-  #scale_color_grey(start = 0.2,
-  #                 end = 0.6) + 
   theme_bw()
 ggsave(file.path('./save',save_nm,'ihdp_denplot.pdf'),
        plot=denplt,width = 5,height = 4)

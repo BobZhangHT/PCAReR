@@ -33,20 +33,13 @@ ReR <- function(pa, X,
   w = sample(rep(c(0,1),c(n0,n1)),n,F) # generate allocation
   mdist = ifelse(n<d,n-1,maha_dist(X,w))
   
-  # while(mdist>a){
-  #   w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
-  #   mdist = maha_dist(X,w)
-  # }
-  
   # introduce n_budget to avoid the extreme case 
   # when a is too restrictive for rerandomization
   
-  #n_budget = ceiling(n_budget_scaler/pa)
   ii = 1
   best_w = w
   best_mdist = mdist
   while (mdist>a) {
-    # w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
     w = sample(rep(c(0,1),c(n0,n1)),n,F)
     mdist = maha_dist(X,w)
     if(best_mdist>mdist){
