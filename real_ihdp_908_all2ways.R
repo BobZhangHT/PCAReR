@@ -1,3 +1,9 @@
+# 0221: add parallel computation
+#       all two way interactions
+
+# 0512: change the data used 
+# 0514: latest version
+
 rm(list=ls())
 
 library(glmnet)
@@ -37,8 +43,10 @@ ihdp = imp1
 
 colnames(ihdp) = c('y','treatment',
                    paste('x',1:(ncol(ihdp)-2),sep=''))
+# standardize the continuos covariates
+#ihdp[,paste('x',1:6,sep='')] = scale(ihdp[,paste('x',1:6,sep='')])
 
-# standardize all covariates
+# standardize all comvariates
 ihdp[,1:27] = scale(ihdp[,1:27])
 
 # Simulation --------------------------------------------------------------
@@ -68,14 +76,14 @@ ihdp_y_gen = function(X,w){
   yhat
 }
 
-# we balance all samples
+# We balance all samples
 n = nrow(ihdp)
 X = as.matrix(model.matrix(fml,data=ihdp))[1:n,]
 X = scale(X)
 
 save_nm = '0608-ihdp-all2ways'
 
-# determine K
+# Determine K
 X_svd = svd(X)
 scree_df = data.frame(
   index = 1:dim(X)[2],
@@ -90,14 +98,18 @@ scree_plt = ggplot(scree_df,aes(x=index,y=var_explained, group=1))+
   xlab('Index')+
   ylab('Variance Explained')+
   geom_vline(aes(xintercept=sum(X_svd$d^2>mean(X_svd$d^2)),
+                #y=seq(0,max(var_explained),dim(X)[2]),
+                #colour='darkred',
                 linetype='solid'),
              color='darkred',
-             show.legend = T,
+             show.legend = T,#'Kaiser',
              key_glyph = "path",
              lwd=0.5)+
   geom_vline(aes(xintercept=sum(cumsum_vars<0.5)+1,
+                #colour='darkblue',
+                #y=seq(0,max(var_explained),dim(X)[2]),
                 linetype='dashed'),
-             color='darkblue',
+             color='darkblue',#TeX('$\\gamma_k=0.5$'),
              show.legend = T,
              key_glyph = "path",
              lwd=0.5)+
@@ -107,8 +119,26 @@ scree_plt = ggplot(scree_df,aes(x=index,y=var_explained, group=1))+
                                                                          "darkred"))),
                       labels = unname(TeX(c('$\\gamma_k=0.5$',
                                                'Kaiser')))) +
+  #scale_linetype_discrete(values=c('solid','dashed'))+
   theme_bw()+
   theme(legend.position="top")
+
+
+# plot(X_svd$d^2/sum(X_svd$d^2),
+#      type='l',
+#      xlab = 'Index',
+#      ylab = 'Variance Explained')
+# abline(v=sum(X_svd$d^2>mean(X_svd$d^2)),
+#        col='darkred',lty=1)
+# cumsum_vars = cumsum(X_svd$d^2)
+# cumsum_vars = cumsum_vars/cumsum_vars[length(cumsum_vars)]
+# abline(v=sum(cumsum_vars<0.5)+1,
+#        col='darkblue',lty=2)
+# legend('topright',
+#        legend = TeX(c('$\\gamma_k=0.5$','Kaiser')),
+#        #legend = c('1','2'),
+#        lty=1:2,
+#        col = c("darkred", "darkblue"))
 
 
 # given X, perform all randomization methods for 1000 times
@@ -244,6 +274,7 @@ if(!file.exists(save_dir_pcarer)){
     best_w = w
     best_mdist = mdist
     while (mdist>a_pca) {
+      #w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
       w = sample(rep(c(0,1),c(n0,n1)),n,F) 
       mdist = maha_dist(Zk,w)
       if(best_mdist>mdist){
@@ -304,6 +335,7 @@ if(!file.exists(save_dir_ridgerer)){
     best_w = w
     best_mdist = mdist
     while (mdist>a) {
+      #w = sample(rep(c(0,1),c(n/2,n/2)),n,F)
       w = sample(rep(c(0,1),c(n0,n1)),n,F) 
       mdist = maha_dist(X,w,lambda)
       if(best_mdist>mdist){
@@ -333,6 +365,7 @@ if(!file.exists(save_dir_ridgerer)){
   load(file = save_dir_ridgerer)
 }
 
+# save.image('./save/ihdp_workspace.rdata')
 
 # Covariate Analysis ------------------------------------------------------
 library(lattice)
@@ -364,6 +397,8 @@ r_mdiff_all_mat$Methods = factor(r_mdiff_all_mat$Methods,
                                  levels = c('ReR','RidgeReR','PCAReR'))
 rownames(r_mdiff_all_mat) = NULL
 
+#rownames(va_hm_mat) = d_seq
+#colnames(va_hm_mat) = rho_seq
 r_mdiff_mat_plt = r_mdiff_mat
 rownames(r_mdiff_mat_plt) = NULL
 colnames(r_mdiff_mat_plt) = c('ReR','Ridge-ReR','PCA-ReR')
@@ -395,6 +430,9 @@ plt_mdiff = levelplot(r_mdiff_mat_plt[1:25,c(3,2,1)],
                    xlab=list('Covariate Index',cex=.75),
                    ylab='',
                    aspect = 0.3,
+                   #xlab=TeX('$X$'),ylab='',#TeX('$d$'),
+                   #at=seq(0,0.5,.1),
+                   #main=TeX("$r_{\}$"))
                    par.settings=nmlist,
                    main='')
 
@@ -404,6 +442,38 @@ pdf(file.path('./save',save_nm,'ihdp_cov.pdf'),
     height=2,width=6)
 plt_mdiff
 dev.off()
+
+# # combine the results of continuous features x1-x9 into a dataframe
+# dd = 6
+# cov_diff_df = data.frame(rbind(cbind(cov_diff_rand[,1:dd]),
+#                                 cbind(cov_diff_rer[,1:dd]),
+#                                 cbind(cov_diff_ridgerer[,1:dd]),
+#                                 cbind(cov_diff_pcarer[,1:dd])))
+# cov_diff_df['Methods'] = factor(rep(c('CR','ReR','RidgeReR','PCAReR'),rep(reps,4)),
+#                                 levels=c('CR','ReR','RidgeReR','PCAReR'))
+# 
+# 
+# # plot the group boxplot
+# colors_seq = c('azure3',hue_pal()(4))
+#  
+# melt_cov_diff_df = melt(cov_diff_df,id.vars = 'Methods')
+#  
+# boxplt = ggplot(data=melt_cov_diff_df,aes(x= variable, 
+#                                            y= value, 
+#                                            fill=Methods)) +
+#    geom_boxplot(outlier.size=0.5,outlier.alpha = 0.5) +
+#    xlab("Covariates")+
+#    ylab('Mean Difference') +
+#    scale_fill_manual(values=colors_seq[-5])+
+#    scale_x_discrete(breaks=paste0('x',1:dd),
+#                     labels=parse(text=TeX(paste0('$X_{',1:dd,'}$'))))+
+#    #scale_fill_grey()+
+#    theme_bw()
+# # boxplt
+#  
+# ggsave(file.path('./save',save_nm,'ihdp_boxplot.pdf'),
+#         plot=boxplt,width = 8,height = 4)
+# cat('Box Plot Saved!\n')
 
 # $\tau$ Analysis  --------------------------------------------------------
 
@@ -444,6 +514,8 @@ denplt<-ggplot(tau_df, aes(x=value,
              linetype="dashed")+
   xlab(TeX('$\\hat{\\tau}$'))+
   ylab('Density') + 
+  #scale_color_grey(start = 0.2,
+  #                 end = 0.6) + 
   theme_bw()
 ggsave(file.path('./save',save_nm,'ihdp_denplot.pdf'),
        plot=denplt,width = 5,height = 4)
@@ -470,7 +542,10 @@ df_time_mdiff_tau = data.frame(Methods=c('ReR','RidgeReR','PCAReR'),
                                tau=tau_df[,2],
                                time=c(mean(time_rer),
                                       mean(time_ridgerer),
-                                      mean(time_pcarer)))
+                                      mean(time_pcarer)),
+                               iter=c(mean(ii_vec_rer),
+                                      mean(ii_vec_ridgerer),
+                                      mean(ii_vec_pcarer)))
 df_time_mdiff_tau
 write.csv(df_time_mdiff_tau,
           file.path('./save',save_nm,'ihdp_table.csv'),

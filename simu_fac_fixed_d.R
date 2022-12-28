@@ -18,8 +18,8 @@ library(abind)
 
 # experiment
 reps = 2000
-cores = 60 # number of cores to use
-save_nm = '06-07Simu' # name of the saving folder
+cores = 50
+save_nm = '06-01Simu'
 
 # factors
 # known factors
@@ -44,7 +44,7 @@ var_ratios = list(0.5,
 var_ratios_nm = c('PCAReR-5','PCAReR-7',
                   'PCAReR-9','PCAReR-K')
 
-n_budget = 10000
+n_budget = 1000
 
 params = list(reps=reps,cores=cores,
               n_seq=n_seq,d_seq=d_seq,
