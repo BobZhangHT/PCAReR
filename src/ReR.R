@@ -1,5 +1,3 @@
-# update 0220: accommondate unequal sample size
-
 maha_dist = function(X,w,lambda=0){
   # note that the input data matrix should be centered
   library(MASS)
