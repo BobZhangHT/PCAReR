@@ -1,9 +1,3 @@
-# 0221: add parallel computation
-#       all two way interactions
-
-# 0512: change the data used 
-# 0514: latest version
-
 rm(list=ls())
 
 library(glmnet)
